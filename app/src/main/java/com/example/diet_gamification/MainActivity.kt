@@ -1,147 +1,55 @@
-package com.example.diet_gamification
+package com.example.diet_gamifikasi
 
 import android.os.Bundle
-import androidx.activity.ComponentActivity
-import androidx.activity.compose.setContent
-import androidx.compose.foundation.layout.*
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
-import androidx.compose.ui.Alignment
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.tooling.preview.Preview
-import androidx.navigation.NavHostController
-import androidx.navigation.compose.*
-import com.example.diet_gamification.ui.theme.Diet_GamificationTheme
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.*
+import androidx.activity.viewModels
+import androidx.appcompat.app.AppCompatActivity
+import androidx.fragment.app.Fragment
+import androidx.lifecycle.Observer
+import com.example.diet_gamification.R
+import com.example.diet_gamifikasi.profile.UserViewModel
+import com.example.diet_gamifikasi.todolist.ToDoListFragment
+import com.example.diet_gamifikasi.workout.WorkOutFragment
+import com.example.diet_gamifikasi.report.ReportFragment
+import com.example.diet_gamifikasi.profile.ProfileFragment
+import com.google.android.material.bottomnavigation.BottomNavigationView
 
-// MainActivity
-class MainActivity : ComponentActivity() {
+class MainActivity : AppCompatActivity() {
+
+    private val userViewModel: UserViewModel by viewModels()
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setContent {
-            Diet_GamificationTheme {
-                MainScreen()
+        setContentView(R.layout.activity_main)
+
+        val bottomNavigation = findViewById<BottomNavigationView>(R.id.bottomNavigation)
+        bottomNavigation.setOnItemSelectedListener { item ->
+            when (item.itemId) {
+                R.id.nav_todo -> openFragment(ToDoListFragment())
+                R.id.nav_workout -> openFragment(WorkOutFragment())
+                R.id.nav_report -> openFragment(ReportFragment())
+                R.id.nav_profile -> openFragment(ProfileFragment())
             }
+            true
         }
-    }
-}
 
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-fun MainScreen() {
-    var userName by remember { mutableStateOf("Guest") }
-    var userExp by remember { mutableStateOf(0) }
-    val navController = rememberNavController()
-
-    Scaffold(
-        topBar = {
-            SmallTopAppBar(
-                title = {
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
-                        Text(text = "Welcome, $userName!")
-                        Text(text = "EXP: $userExp")
-                    }
-                }
-            )
-        },
-        bottomBar = {
-            BottomNavigationBar(navController = navController)
-        },
-        modifier = Modifier.fillMaxSize()
-    ) { innerPadding ->
-        NavHost(
-            navController = navController,
-            startDestination = "todolist",
-            modifier = Modifier.padding(innerPadding)
-        ) {
-            composable("todolist") { ToDoListScreen() }
-            composable("workout") { WorkOutScreen() }
-            composable("report") { ReportScreen() }
-            composable("profile") { ProfileScreen(
-                onProfileUpdated = { name, exp ->
-                    userName = name
-                    userExp = exp
-                }
-            ) }
+        // Set default fragment
+        if (savedInstanceState == null) {
+            openFragment(ToDoListFragment())
         }
+
+        // Observe user data
+        userViewModel.username.observe(this, Observer { name ->
+            findViewById<TextView>(R.id.tvUsername).text = name
+        })
+
+        userViewModel.exp.observe(this, Observer { exp ->
+            findViewById<TextView>(R.id.tvExp).text = "EXP: $exp"
+        })
     }
-}
 
-
-// Bottom navigation bar composable
-@Composable
-fun BottomNavigationBar(navController: NavHostController) {
-    NavigationBar {
-        NavigationBarItem(
-            icon = { Icon(Icons.Filled.Home, contentDescription = "ToDoList") },
-            label = { Text("To-Do List") },
-            selected = navController.currentBackStackEntry?.destination?.route == "todolist",
-            onClick = { navController.navigate("todolist") }
-        )
-        NavigationBarItem(
-            icon = { Icon(Icons.Filled.FitnessCenter, contentDescription = "Workout") },
-            label = { Text("Workout") },
-            selected = navController.currentBackStackEntry?.destination?.route == "workout",
-            onClick = { navController.navigate("workout") }
-        )
-        NavigationBarItem(
-            icon = { Icon(Icons.Filled.Assessment, contentDescription = "Report") },
-            label = { Text("Report") },
-            selected = navController.currentBackStackEntry?.destination?.route == "report",
-            onClick = { navController.navigate("report") }
-        )
-        NavigationBarItem(
-            icon = { Icon(Icons.Filled.Person, contentDescription = "Profile") },
-            label = { Text("Profile") },
-            selected = navController.currentBackStackEntry?.destination?.route == "profile",
-            onClick = { navController.navigate("profile") }
-        )
-    }
-}
-
-// ToDoList screen composable
-@Composable
-fun ToDoListScreen() {
-    Text("To-Do List Screen")
-}
-
-// WorkOut screen composable
-@Composable
-fun WorkOutScreen() {
-    Text("Workout Screen")
-}
-
-// Report screen composable
-@Composable
-fun ReportScreen() {
-    Text("Report Screen")
-}
-
-// Profile screen composable
-@Composable
-fun ProfileScreen(onProfileUpdated: (String, Int) -> Unit) {
-    Column(
-        modifier = Modifier.fillMaxSize(),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Center
-    ) {
-        Text("Profile Screen")
-        Button(onClick = { onProfileUpdated("John Doe", 100) }) {
-            Text("Update Profile")
-        }
-    }
-}
-
-// Preview function for MainScreen
-@Preview(showBackground = true)
-@Composable
-fun MainScreenPreview() {
-    Diet_GamificationTheme {
-        MainScreen()
+    private fun openFragment(fragment: Fragment) {
+        supportFragmentManager.beginTransaction()
+            .replace(R.id.fragment_container, fragment)
+            .commit()
     }
 }

@@ -7,43 +7,109 @@
     android:layout_height="match_parent"
     tools:context=".todolist.ToDoListFragment">
 
-    <!-- Toolbar -->
+    <!-- Top Bar (Displays EXP, Title, and Name) -->
     <androidx.appcompat.widget.Toolbar
-        android:id="@+id/toolbar"
-        android:layout_width="0dp"
+        android:id="@+id/topBar"
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:background="?attr/colorPrimary"
-        android:elevation="4dp"
-        android:title="To-Do List"
-        android:titleTextColor="@android:color/white"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toEndOf="parent" />
+        app:title="EXP: 120 | Warrior | John Doe"
+        app:titleTextColor="@android:color/white"
+        app:layout_constraintTop_toTopOf="parent" />
 
-    <!-- RecyclerView for the To-Do List -->
-    <androidx.recyclerview.widget.RecyclerView
-        android:id="@+id/recyclerViewToDoList"
-        android:layout_width="0dp"
-        android:layout_height="0dp"
-        android:clipToPadding="false"
-        android:padding="16dp"
-        app:layout_constraintTop_toBottomOf="@id/toolbar"
-        app:layout_constraintBottom_toTopOf="@id/fabAddFood"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        tools:listitem="@layout/item_todo" />
-
-    <!-- Floating Action Button for Adding Food -->
-    <com.google.android.material.floatingactionbutton.FloatingActionButton
-        android:id="@+id/fabAddFood"
-        android:layout_width="wrap_content"
+    <!-- Calendar and Calorie Progress (Side by Side) -->
+    <LinearLayout
+        android:id="@+id/layout_calendar_calorie"
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:contentDescription="Add Food"
-        android:src="@drawable/ic_add"
-        app:layout_constraintBottom_toBottomOf="parent"
+        android:orientation="horizontal"
+        android:weightSum="2"
+        android:padding="8dp"
+        app:layout_constraintTop_toBottomOf="@id/topBar"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent">
+
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:orientation="vertical">
+
+            <ProgressBar
+                android:id="@+id/progress_kcal"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:max="2000"
+                android:progress="1200" />
+
+            <TextView
+                android:id="@+id/text_kcal_count"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="1200 / 2000 kcal"
+                android:layout_gravity="center_horizontal"/>
+        </LinearLayout>
+
+        <androidx.recyclerview.widget.RecyclerView
+            android:id="@+id/recycler_breakfast"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager" />
+
+        <CalendarView
+            android:id="@+id/calendarView"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"/>
+    </LinearLayout>
+
+    <!-- To-Do List Section -->
+    <LinearLayout
+        android:id="@+id/todo_list_container"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="8dp"
+        app:layout_constraintTop_toBottomOf="@id/layout_calendar_calorie"
+        app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
-        app:tint="@android:color/white"
-        android:layout_margin="16dp"
-        app:backgroundTint="?attr/colorPrimary" />
+        app:layout_constraintBottom_toBottomOf="parent">
+
+        <TextView
+            android:id="@+id/txt_breakfast"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Breakfast"
+            android:textSize="18sp"
+            android:textStyle="bold"/>
+
+        <TextView
+            android:id="@+id/txt_lunch"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Lunch"
+            android:textSize="18sp"
+            android:textStyle="bold"/>
+
+        <androidx.recyclerview.widget.RecyclerView
+            android:id="@+id/recycler_lunch"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager"/>
+
+        <TextView
+            android:id="@+id/txt_dinner"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Dinner"
+            android:textSize="18sp"
+            android:textStyle="bold"/>
+
+        <androidx.recyclerview.widget.RecyclerView
+            android:id="@+id/recycler_dinner"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager"/>
+    </LinearLayout>
 
 </androidx.constraintlayout.widget.ConstraintLayout>

@@ -1,106 +1,87 @@
-import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.text.ClickableText
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.text.AnnotatedString
-import androidx.compose.ui.unit.dp
-import androidx.lifecycle.ViewModel
-import androidx.lifecycle.viewmodel.compose.viewModel
-import com.example.diet_gamification.todolist.FoodEntry
-import com.example.diet_gamification.todolist.ToDoListViewModel
+package com.example.diet_gamification.todolist
 
-@Composable
-fun ToDoListFragment(viewModel: ToDoListViewModel = viewModel()) {
-    var selectedDay by remember { mutableStateOf("Today") }
+import android.os.Bundle
+import android.view.LayoutInflater
+import android.view.View
+import android.view.ViewGroup
+import android.widget.CalendarView
+import android.widget.ProgressBar
+import android.widget.TextView
+import androidx.fragment.app.Fragment
+import androidx.lifecycle.ViewModelProvider
+import androidx.recyclerview.widget.LinearLayoutManager
+import androidx.recyclerview.widget.RecyclerView
+import com.example.diet_gamification.R
+import com.example.diet_gamification.model.FoodItem
 
-    Scaffold(
-        topBar = {
-            Column {
-                // Calorie Progress Bar
-                Text("Calories Consumed Today: ${viewModel.totalCalories} / ${viewModel.calorieGoal}", modifier = Modifier.padding(16.dp))
-                LinearProgressIndicator(
-                    progress = viewModel.totalCalories / viewModel.calorieGoal.toFloat(),
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(10.dp)
-                        .padding(horizontal = 16.dp)
-                )
+class ToDoListFragment : Fragment() {
 
-                // Navigation for Today/Tomorrow/Yesterday
-                Row(
-                    modifier = Modifier.fillMaxWidth().padding(8.dp),
-                    horizontalArrangement = Arrangement.SpaceEvenly
-                ) {
-                    listOf("Yesterday", "Today", "Tomorrow").forEach { day ->
-                        ClickableText(
-                            text = AnnotatedString(day),
-                            onClick = { selectedDay = day },
-                            modifier = Modifier.padding(8.dp)
-                        )
-                    }
-                }
-            }
-        },
-        content = { paddingValues ->
-            Column(modifier = Modifier.padding(paddingValues)) {
-                // Display Tables for Meals
-                MealSection("Breakfast", viewModel.breakfastFoods) { food ->
-                    viewModel.addFoodToMeal("Breakfast", food)
-                }
-                MealSection("Lunch", viewModel.lunchFoods) { food ->
-                    viewModel.addFoodToMeal("Lunch", food)
-                }
-                MealSection("Dinner", viewModel.dinnerFoods) { food ->
-                    viewModel.addFoodToMeal("Dinner", food)
-                }
-            }
-        }
-    )
-}
+    private lateinit var viewModel: ToDoListViewModel
+    private lateinit var progressKcal: ProgressBar
+    private lateinit var kcalText: TextView
+    private lateinit var calendarView: CalendarView
+    private lateinit var recyclerBreakfast: RecyclerView
+    private lateinit var recyclerLunch: RecyclerView
+    private lateinit var recyclerDinner: RecyclerView
 
-@Composable
-fun MealSection(
-    mealName: String,
-    foodList: List<FoodEntry>,
-    onAddFood: (FoodEntry) -> Unit
-) {
-    Column(modifier = Modifier.padding(16.dp)) {
-        Text(text = "$mealName", style = MaterialTheme.typography.bodyLarge)
-        LazyColumn {
-            items(foodList) { food ->
-                Row(modifier = Modifier.fillMaxWidth()) {
-                    Text(text = food.name, modifier = Modifier.weight(1f))
-                    Text(text = "${food.calories} cal", modifier = Modifier.weight(1f))
-                }
-            }
-        }
-        Button(onClick = { onAddFood(FoodEntry("New Food", 100)) }) {
-            Text("Add Food")
+    override fun onCreateView(
+        inflater: LayoutInflater, container: ViewGroup?,
+        savedInstanceState: Bundle?
+    ): View? {
+        val view = inflater.inflate(R.layout.fragment_todolist, container, false)
+
+        // Initialize UI components
+        calendarView = view.findViewById(R.id.calendarView)
+        recyclerBreakfast = view.findViewById(R.id.recycler_breakfast)
+        recyclerLunch = view.findViewById(R.id.recycler_lunch)
+        recyclerDinner = view.findViewById(R.id.recycler_dinner)
+        progressKcal = view.findViewById(R.id.progress_kcal)
+        kcalText = view.findViewById(R.id.text_kcal_count)
+
+        // Set up RecyclerViews
+        recyclerBreakfast.layoutManager = LinearLayoutManager(requireContext())
+        recyclerLunch.layoutManager = LinearLayoutManager(requireContext())
+        recyclerDinner.layoutManager = LinearLayoutManager(requireContext())
+
+        return view
+    }
+
+    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
+        super.onViewCreated(view, savedInstanceState)
+
+        // Initialize ViewModel
+        viewModel = ViewModelProvider(this).get(ToDoListViewModel::class.java)
+
+        // Set up Adapters with click listeners
+        val breakfastAdapter = FoodAdapter(emptyList()) { foodItem -> onFoodClicked(foodItem) }
+        val lunchAdapter = FoodAdapter(emptyList()) { foodItem -> onFoodClicked(foodItem) }
+        val dinnerAdapter = FoodAdapter(emptyList()) { foodItem -> onFoodClicked(foodItem) }
+
+        recyclerBreakfast.adapter = breakfastAdapter
+        recyclerLunch.adapter = lunchAdapter
+        recyclerDinner.adapter = dinnerAdapter
+
+        // Observe total calories
+        viewModel.totalCalories.observe(viewLifecycleOwner) { updateCalories(it) }
+
+        // Observe meal lists and update adapters
+        viewModel.breakfastFoods.observe(viewLifecycleOwner) { breakfastAdapter.updateList(it) }
+        viewModel.lunchFoods.observe(viewLifecycleOwner) { lunchAdapter.updateList(it) }
+        viewModel.dinnerFoods.observe(viewLifecycleOwner) { dinnerAdapter.updateList(it) }
+
+        // Handle calendar date change
+        calendarView.setOnDateChangeListener { _, year, month, dayOfMonth ->
+            val selectedDate = "$year-${month + 1}-$dayOfMonth"
+            viewModel.loadMealsForDate(selectedDate)
         }
     }
-}
 
-// ViewModel for managing food data
-class ToDoListViewModel : ViewModel() {
-    var totalCalories by mutableStateOf(0)
-    var calorieGoal by mutableStateOf(2000)
+    private fun updateCalories(calories: Int) {
+        progressKcal.progress = calories
+        kcalText.text = "$calories / ${viewModel.calorieGoal.value ?: 0} kcal"
+    }
 
-    val breakfastFoods = mutableListOf<FoodEntry>()
-    val lunchFoods = mutableListOf<FoodEntry>()
-    val dinnerFoods = mutableListOf<FoodEntry>()
-
-    fun addFoodToMeal(meal: String, food: FoodEntry) {
-        when (meal) {
-            "Breakfast" -> breakfastFoods.add(food)
-            "Lunch" -> lunchFoods.add(food)
-            "Dinner" -> dinnerFoods.add(food)
-        }
-        // Update calorie count as an example
-        totalCalories += food.calories
+    private fun onFoodClicked(foodItem: FoodItem) {
+        // Handle food item click, e.g., show details or allow editing
     }
 }
-
-data class FoodEntry(val name: String, val calories: Int)
